@@ -1,9 +1,6 @@
 [build]
   command = "npm run build"
   publish = "dist"
-[functions]
-  directory = "../workers"
-    node_bundler = "esbuild"
 
 [build.environment]
   NODE_VERSION = "18"
