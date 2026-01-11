@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "lib": [
+            "DOM",
+            "DOM.Iterable",
+            "ESNext"
+        ],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "strict": true,
+        "baseUrl": ".",
+        "jsx": "react-jsx",
+        "paths": {
+            "@polymarket-intelligence/llm/*": [
+                "packages/llm/*"
+            ],
+            "@polymarket-intelligence/utils/*": [
+                "packages/utils/*"
+            ],
+            "@polymarket-intelligence/data-sources/*": [
+                "packages/data-sources/*"
+            ]
+        }
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}

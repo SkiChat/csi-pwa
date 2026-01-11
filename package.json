@@ -1,0 +1,19 @@
+{
+    "name": "polymarket-intelligence",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "npm run dev --workspace=@polymarket-intelligence/web",
+        "build": "npm run build --workspaces",
+        "lint": "npm run lint --workspaces"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "prettier": "^3.0.0",
+        "@types/node": "^20.0.0",
+        "@supabase/supabase-js": "^2.39.0"
+    }
+}
