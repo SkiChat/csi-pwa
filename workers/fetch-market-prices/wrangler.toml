@@ -1,0 +1,12 @@
+name = "fetch-market-prices"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+SUPABASE_URL = "https://empejlcanbbrngweofxr.supabase.co"
+
+# SUPABASE_SERVICE_ROLE_KEY should be set via: 
+# wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+
+[triggers]
+crons = ["*/30 * * * *"]  # Run every 30 minutes
