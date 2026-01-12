@@ -1,0 +1,12 @@
+name = "fetch-polymarket-markets"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+VITE_SUPABASE_URL = "https://empejlcanbbrngweofxr.supabase.co"
+
+# VITE_SUPABASE_ANON_KEY should be set via: 
+# wrangler secret put VITE_SUPABASE_ANON_KEY
+
+[triggers]
+crons = ["0 */6 * * *"]  # Run every 6 hours

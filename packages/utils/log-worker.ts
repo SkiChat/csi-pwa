@@ -1,22 +1,20 @@
-// /packages/utils/log-worker.ts
-
-// Note: In a real implementation, you would import a configured supabase client here.
-// For scaffolding, we assume it's provided or available.
-// import { supabase } from '../lib/supabase'; 
+import { getSupabaseClient } from "../lib/supabase";
 
 export async function logWorkerRun<T>(
     workerName: string,
-    fn: () => Promise<T>,
-    supabase: any // Passing supabase client as argument for flexibility in scaffolding
+    fn: (supabase: any) => Promise<T>,
+    env?: any
 ): Promise<T> {
+    const supabase = getSupabaseClient(env);
     const startTime = Date.now();
+
     try {
-        const result = await fn();
+        const result = await fn(supabase);
         const durationMs = Date.now() - startTime;
 
-        await supabase.from('worker_logs').insert({
+        await supabase.from("worker_logs").insert({
             worker_name: workerName,
-            status: 'success',
+            status: "success",
             duration_ms: durationMs,
         });
 
@@ -24,15 +22,20 @@ export async function logWorkerRun<T>(
     } catch (e: any) {
         const durationMs = Date.now() - startTime;
 
-        await supabase.from('worker_logs').insert({
-            worker_name: workerName,
-            status: 'failure',
-            duration_ms: durationMs,
-            error_message: e.message,
-            metadata: { stack: e.stack },
-        });
+        console.error(`Worker ${workerName} failed:`, e.message);
 
-        // Re-throw the error to ensure the worker execution fails properly
+        try {
+            await supabase.from("worker_logs").insert({
+                worker_name: workerName,
+                status: "failure",
+                duration_ms: durationMs,
+                error_message: e.message,
+                metadata: { stack: e.stack },
+            });
+        } catch (logLogErr) {
+            console.error("Failed to log failure to database:", logLogErr);
+        }
+
         throw e;
     }
 }
