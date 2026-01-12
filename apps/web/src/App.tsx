@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import * as React from 'react'
+import { useEffect, useState } from 'react'
 import { MarketDetail } from './pages/MarketDetail'
 import { supabase } from './lib/supabase'
+import MarketList from './components/MarketList'
 
 function App() {
     const [markets, setMarkets] = useState<any[]>([])
@@ -13,13 +15,7 @@ function App() {
             const params = new URLSearchParams(window.location.search);
             const urlMarketId = params.get('marketId');
 
-            if (urlMarketId) {
-                setSelectedMarketId(urlMarketId);
-                setLoading(false);
-                return;
-            }
-
-            // Otherwise fetch the most active markets from Supabase
+            // Fetch the most active markets from Supabase nonetheless to populate the list
             const { data, error } = await supabase
                 .from('markets')
                 .select('*')
@@ -27,7 +23,11 @@ function App() {
 
             if (!error && data && data.length > 0) {
                 setMarkets(data);
-                setSelectedMarketId(data[0].id.toString());
+                if (urlMarketId) {
+                    setSelectedMarketId(urlMarketId);
+                } else {
+                    setSelectedMarketId(data[0].id.toString());
+                }
             }
             setLoading(false);
         }
@@ -58,8 +58,28 @@ function App() {
     }
 
     return (
-        <div className="App">
-            <MarketDetail marketId={selectedMarketId} />
+        <div className="min-h-screen bg-[#F8F9FC]">
+            <div className="max-w-7xl mx-auto px-6 pt-12 pb-4">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="h-10 w-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+                        <span className="text-white font-black">PI</span>
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-black text-slate-900 leading-none">Active Intelligence Feeds</h2>
+                        <p className="text-sm text-slate-400 font-medium">Select a market to explore deep signals</p>
+                    </div>
+                </div>
+
+                <MarketList
+                    markets={markets}
+                    selectedId={selectedMarketId}
+                    onSelectMarket={(id: string | number) => setSelectedMarketId(id.toString())}
+                />
+            </div>
+
+            <div className="border-t border-slate-200/60">
+                <MarketDetail marketId={selectedMarketId} />
+            </div>
         </div>
     )
 }
