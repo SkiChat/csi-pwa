@@ -104,7 +104,7 @@ function MarketDetailWrapper() {
                     </div>
                 </div>
             </div>
-            <MarketDetail />
+            <MarketDetail marketId={marketId} />
         </div>
     );
 }

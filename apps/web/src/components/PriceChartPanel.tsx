@@ -9,7 +9,7 @@ interface PriceChartPanelProps {
 }
 
 export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) => {
-    const [data, setData] = useState<any[]>([]);
+    const [priceData, setPriceData] = useState<any[]>([]);
     const [stats, setStats] = useState({ current: 0, delta: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -22,20 +22,21 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
 
                 const { data: prices, error: fetchError } = await supabase
                     .from('market_prices')
-                    .select('*')
+                    .select('timestamp, yes_price')
                     .eq('market_id', marketId)
                     .order('timestamp', { ascending: true });
 
                 if (fetchError) throw fetchError;
 
                 if (prices && prices.length > 0) {
+                    // Transform data for chart as requested: x = timestamp, y = price
                     const formatted = prices.map(p => ({
-                        time: new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        fullTime: new Date(p.timestamp).toLocaleString(),
-                        price: p.yes_price
+                        x: new Date(p.timestamp).getTime(),
+                        displayTime: new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        y: p.yes_price
                     }));
 
-                    setData(formatted);
+                    setPriceData(formatted);
 
                     // Calculate simple stats
                     const current = prices[prices.length - 1].yes_price;
@@ -44,7 +45,7 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
 
                     setStats({ current, delta });
                 } else {
-                    setData([]);
+                    setPriceData([]);
                     setStats({ current: 0, delta: 0 });
                 }
             } catch (err: any) {
@@ -84,7 +85,7 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 tracking-tight">Price Performance</h3>
                 </div>
-                {data.length > 0 && (
+                {priceData.length > 0 && (
                     <div className="text-right">
                         <p className="text-2xl font-black text-indigo-600">${stats.current.toFixed(2)}</p>
                         <p className={`text-[10px] font-bold uppercase tracking-widest ${stats.delta >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -95,9 +96,9 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
             </div>
 
             <div className="h-48 w-full">
-                {data.length > 0 ? (
+                {priceData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data}>
+                        <AreaChart data={priceData}>
                             <defs>
                                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.15} />
@@ -105,7 +106,7 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="time" hide />
+                            <XAxis dataKey="x" hide />
                             <YAxis hide domain={['auto', 'auto']} />
                             <Tooltip
                                 contentStyle={{
@@ -116,11 +117,13 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
                                 }}
                                 itemStyle={{ fontWeight: 'black', color: '#4f46e5' }}
                                 labelStyle={{ display: 'none' }}
-                                formatter={(value: number) => [`$${value.toFixed(2)}`, 'Market Price']}
+                                formatter={(value: number, name: any, props: any) => {
+                                    return [`$${value.toFixed(2)}`, 'Market Price'];
+                                }}
                             />
                             <Area
                                 type="monotone"
-                                dataKey="price"
+                                dataKey="y"
                                 stroke="#4f46e5"
                                 strokeWidth={4}
                                 fillOpacity={1}
@@ -131,7 +134,7 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
                     </ResponsiveContainer>
                 ) : (
                     <div className="h-full flex items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No Historical Data Found</p>
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No price data available</p>
                     </div>
                 )}
             </div>

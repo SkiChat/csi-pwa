@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { PriceChartPanel } from '../components/PriceChartPanel';
 import { NewsPanel } from '../components/NewsPanel';
@@ -16,8 +16,11 @@ interface Market {
     status: string;
 }
 
-export const MarketDetail: React.FC = () => {
-    const { marketId } = useParams<{ marketId: string }>();
+interface MarketDetailProps {
+    marketId: string;
+}
+
+export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
     const navigate = useNavigate();
     const [market, setMarket] = useState<Market | null>(null);
     const [loading, setLoading] = useState(true);
@@ -26,6 +29,7 @@ export const MarketDetail: React.FC = () => {
         if (!marketId) return;
 
         async function fetchMarket() {
+            setLoading(true);
             const { data, error } = await supabase
                 .from('markets')
                 .select('*')

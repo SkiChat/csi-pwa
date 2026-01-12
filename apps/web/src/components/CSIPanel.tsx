@@ -16,7 +16,7 @@ interface AISummary {
 }
 
 export const CSIPanel: React.FC<CSIPanelProps> = ({ marketId }) => {
-    const [summaries, setSummaries] = useState<AISummary[]>([]);
+    const [insights, setInsights] = useState<AISummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +33,7 @@ export const CSIPanel: React.FC<CSIPanelProps> = ({ marketId }) => {
                     .limit(3);
 
                 if (fetchError) throw fetchError;
-                setSummaries(data || []);
+                setInsights(data || []);
             } catch (err: any) {
                 console.error('Error fetching AI insights:', err);
                 setError(err.message);
@@ -77,8 +77,8 @@ export const CSIPanel: React.FC<CSIPanelProps> = ({ marketId }) => {
             </div>
 
             <div className="space-y-4">
-                {summaries.length > 0 ? (
-                    summaries.map((item, index) => {
+                {insights.length > 0 ? (
+                    insights.map((item, index) => {
                         const Icon = icons[index % icons.length];
                         const sentimentLabel = (item.sentiment_score || 0) > 0 ? 'Positive' : (item.sentiment_score || 0) < 0 ? 'Negative' : 'Neutral';
                         const scoreColor = (item.sentiment_score || 0) > 0 ? 'text-emerald-500' : (item.sentiment_score || 0) < 0 ? 'text-rose-500' : 'text-amber-500';
@@ -104,7 +104,7 @@ export const CSIPanel: React.FC<CSIPanelProps> = ({ marketId }) => {
                 ) : (
                     <div className="py-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                         <Cpu className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest px-4">Initial Consensus Processing...</p>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest px-4">No insights available</p>
                     </div>
                 )}
             </div>
@@ -112,8 +112,8 @@ export const CSIPanel: React.FC<CSIPanelProps> = ({ marketId }) => {
             <div className="mt-6 p-4 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-100">
                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-70 mb-1">CSI Protocol Status</p>
                 <p className="text-xs font-bold">
-                    {summaries.length > 0
-                        ? `Successfully cross-referenced ${summaries.length} AI vectors with real-time sentiment shifts.`
+                    {insights.length > 0
+                        ? `Successfully cross-referenced ${insights.length} AI vectors with real-time sentiment shifts.`
                         : 'Scanning interconnected nodes for real-time risk adjustment...'}
                 </p>
             </div>

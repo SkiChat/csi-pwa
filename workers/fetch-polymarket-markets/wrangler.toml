@@ -9,4 +9,4 @@ VITE_SUPABASE_URL = "https://empejlcanbbrngweofxr.supabase.co"
 # wrangler secret put VITE_SUPABASE_ANON_KEY
 
 [triggers]
-crons = ["0 */6 * * *"]  # Run every 6 hours
+crons = ["0 * * * *"]  # Run hourly
