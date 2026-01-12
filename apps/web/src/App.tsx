@@ -58,26 +58,14 @@ function App() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F9FC]">
-            <div className="max-w-7xl mx-auto px-6 pt-12 pb-4">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="h-10 w-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                        <span className="text-white font-black">PI</span>
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-black text-slate-900 leading-none">Active Intelligence Feeds</h2>
-                        <p className="text-sm text-slate-400 font-medium">Select a market to explore deep signals</p>
-                    </div>
-                </div>
-
+        <div className="App">
+            <div className="container mx-auto px-4 py-6">
+                <h1 className="text-3xl font-bold text-gray-900 mb-6">Polymarket Intelligence</h1>
                 <MarketList
                     markets={markets}
                     selectedId={selectedMarketId}
                     onSelectMarket={(id: string | number) => setSelectedMarketId(id.toString())}
                 />
-            </div>
-
-            <div className="border-t border-slate-200/60">
                 <MarketDetail marketId={selectedMarketId} />
             </div>
         </div>
