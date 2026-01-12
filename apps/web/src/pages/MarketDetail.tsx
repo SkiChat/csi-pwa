@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { PriceChartPanel } from '../components/PriceChartPanel';
 import { NewsPanel } from '../components/NewsPanel';
@@ -14,15 +16,15 @@ interface Market {
     status: string;
 }
 
-interface MarketDetailProps {
-    marketId: string;
-}
-
-export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
+export const MarketDetail: React.FC = () => {
+    const { marketId } = useParams<{ marketId: string }>();
+    const navigate = useNavigate();
     const [market, setMarket] = useState<Market | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!marketId) return;
+
         async function fetchMarket() {
             const { data, error } = await supabase
                 .from('markets')
@@ -47,13 +49,19 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
         </div>
     );
 
+    if (!marketId) return null;
+
     return (
         <div className="min-h-screen bg-[#F8F9FC] text-slate-900 font-sans">
             {/* Navigation Header */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <button className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                    <button
+                        onClick={() => navigate('/')}
+                        className="p-2 hover:bg-slate-100 rounded-full transition-colors flex items-center gap-2 pr-4"
+                    >
                         <ChevronLeft size={20} className="text-slate-600" />
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-widest hidden sm:inline">Back</span>
                     </button>
 
                     <div className="flex items-center gap-3">
@@ -94,7 +102,6 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
                         <PriceChartPanel marketId={marketId} />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* We could add more specific panels here or leave as placeholder for now */}
                             <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-3xl text-white shadow-xl shadow-indigo-200 overflow-hidden relative group">
                                 <div className="relative z-10">
                                     <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Alpha Signal</p>
@@ -106,7 +113,6 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
                                         View Deep Analysis
                                     </button>
                                 </div>
-                                {/* Decorative element */}
                                 <div className="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
                             </div>
 

@@ -15,7 +15,8 @@
         "lucide-react": "^0.300.0",
         "recharts": "^2.10.1",
         "clsx": "^2.0.0",
-        "tailwind-merge": "^2.1.0"
+        "tailwind-merge": "^2.1.0",
+        "react-router-dom": "^6.21.1"
     },
     "devDependencies": {
         "vite": "^5.0.0",
