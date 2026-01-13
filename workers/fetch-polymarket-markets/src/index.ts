@@ -17,7 +17,7 @@ interface GammaMarket {
 async function fetchPolymarketData(supabase: any) {
     console.log("Fetching markets from Polymarket Gamma API...");
 
-    const response = await fetch("https://gamma-api.polymarket.com/markets", {
+    const response = await fetch("https://gamma-api.polymarket.com/markets?closed=false&active=true&order=-volume24hr&limit=100", {
         headers: {
             "Accept": "application/json",
         },
