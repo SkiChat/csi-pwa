@@ -15,6 +15,7 @@ function App() {
             const { data, error } = await supabase
                 .from('markets')
                 .select('*')
+                .eq('status', 'active')
                 .limit(20);
 
             if (!error && data) {
