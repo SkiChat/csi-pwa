@@ -1,5 +1,8 @@
 {
     "name": "@polymarket-intelligence/utils",
     "version": "0.1.0",
-    "main": "index.ts"
+    "main": "index.ts",
+    "scripts": {
+        "build": "echo 'No build needed for TypeScript library'"
+    }
 }

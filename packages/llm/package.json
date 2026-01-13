@@ -2,6 +2,9 @@
     "name": "@polymarket-intelligence/llm",
     "version": "0.1.0",
     "main": "index.ts",
+    "scripts": {
+        "build": "echo 'No build needed for TypeScript library'"
+    },
     "dependencies": {
         "openai": "^4.0.0",
         "exponential-backoff": "^3.1.1"
