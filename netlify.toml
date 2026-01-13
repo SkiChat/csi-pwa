@@ -4,6 +4,11 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  VITE_WORKER_FETCH_POLYMARKET_MARKETS = "https://fetch-polymarket-markets.chatfield-ken.workers.dev"
+  VITE_WORKER_FETCH_NEWS_ARTICLES = "https://fetch-news-articles.chatfield-ken.workers.dev"
+  VITE_WORKER_FETCH_MARKET_PRICES = "https://fetch-market-prices.chatfield-ken.workers.dev"
+  VITE_WORKER_GENERATE_AI_SUMMARIES = "https://generate-ai-summaries.chatfield-ken.workers.dev"
+  VITE_WORKER_TRACK_ENTITIES = "https://track-entities.chatfield-ken.workers.dev"
 
 [[redirects]]
   from = "/*"
