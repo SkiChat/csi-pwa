@@ -14,6 +14,10 @@ jobs:
     name: Deploy Workers
     steps:
       - uses: actions/checkout@v4
+            
+      - name: Install fetch-news-articles dependencies
+        run: npm install
+        working-directory: workers/fetch-news-articles
       
       - name: Deploy fetch-news-articles worker
         uses: cloudflare/wrangler-action@v3
@@ -21,6 +25,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: workers/fetch-news-articles
           command: deploy
+                
+      - name: Install generate-ai-summaries dependencies
+        run: npm install
+        working-directory: workers/generate-ai-summaries
       
       - name: Deploy generate-ai-summaries worker
         uses: cloudflare/wrangler-action@v3
