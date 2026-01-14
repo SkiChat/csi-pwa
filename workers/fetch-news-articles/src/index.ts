@@ -85,11 +85,13 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             }
 
             const payload: any = await response.json();
+            console.log(`[INFO] Market ${market.id}: NewsAPI.org totalResults: ${payload.totalResults}`);
+
             const newsItems = payload.articles || [];
-            console.log(`[INFO] Market ${market.id}: Received ${newsItems.length} articles from NewsAPI.org.`);
+            console.log(`[DEBUG] Market ${market.id}: Full Payload Snapshot: ${JSON.stringify(payload).substring(0, 500)}...`);
 
             if (newsItems.length === 0) {
-                console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}"`);
+                console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}". API Success: ${payload.status}`);
                 continue;
             }
 
@@ -97,30 +99,34 @@ async function fetchAndStoreNews(supabase: any, env: any) {
                 console.log(`[DEBUG] Market ${market.id}: Processing article: "${item.title}"`);
 
                 // a. Save to articles table (upsert by external_id)
+                const articleToUpsert = {
+                    external_id: item.url, // Use URL as stable ID for NewsAPI
+                    title: item.title,
+                    url: item.url,
+                    source: item.source?.name || "News API",
+                    published_at: item.publishedAt,
+                    description: item.description,
+                    metadata: { content: item.content }
+                };
+
+                console.log(`[DEBUG] Market ${market.id}: Transformation result for article: ${item.title.substring(0, 50)}... Target URL: ${item.url}`);
+
                 const { data: article, error: articleError } = await supabase
                     .from('articles')
-                    .upsert({
-                        external_id: item.url, // Use URL as stable ID for NewsAPI
-                        title: item.title,
-                        url: item.url,
-                        source: item.source?.name || "News API",
-                        published_at: item.publishedAt,
-                        description: item.description,
-                        metadata: { content: item.content }
-                    }, { onConflict: 'external_id' })
+                    .upsert(articleToUpsert, { onConflict: 'external_id' })
                     .select()
                     .single();
 
                 if (articleError) {
-                    console.error(`[ERROR] Market ${market.id}: Article upsert failed for "${item.title}":`, articleError);
+                    console.error(`[ERROR] Market ${market.id}: Article upsert failed for "${item.title}": ${articleError.message}`);
                     continue;
                 }
 
-                console.log(`[SUCCESS] Market ${market.id}: Article saved with ID: ${article.id}`);
+                console.log(`[SUCCESS] Market ${market.id}: Article upserted with DB ID: ${article.id}`);
 
                 // b. Link to market in junction table
                 const relevance = calculateRelevance(item.title, item.description || "", keywords);
-                console.log(`[DEBUG] Market ${market.id}: Calculated relevance score: ${relevance}`);
+                console.log(`[DEBUG] Market ${market.id}: Relevance Score: ${relevance.toFixed(2)}`);
 
                 const { error: junctionError } = await supabase
                     .from('market_articles')
@@ -133,9 +139,9 @@ async function fetchAndStoreNews(supabase: any, env: any) {
                     }, { onConflict: 'market_id, article_id' });
 
                 if (junctionError) {
-                    console.error(`[ERROR] Market ${market.id}: Junction table insert failed:`, junctionError);
+                    console.error(`[ERROR] Market ${market.id}: Junction link failed: ${junctionError.message}`);
                 } else {
-                    console.log(`[SUCCESS] Market ${market.id}: Article linked to market.`);
+                    console.log(`[SUCCESS] Market ${market.id}: Linked article ${article.id} to market.`);
                     totalArticlesSaved++;
                 }
             }
