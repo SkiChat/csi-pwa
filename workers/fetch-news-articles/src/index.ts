@@ -75,7 +75,7 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             console.log(`[INFO] Market ${market.id} (${market.title}): Extracted keywords: "${keywords}"`);
 
             console.log(`[INFO] Market ${market.id}: Calling NewsAPI.org with keywords: "${keywords}"`);
-            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.THENEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
             const response = await fetch(apiUrl);
 
             // Handle API errors
@@ -87,14 +87,28 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             const payload: any = await response.json();
             console.log(`[INFO] Market ${market.id}: NewsAPI.org totalResults: ${payload.totalResults}`);
 
-            const newsItems = payload.articles || [];
+            let newsItems = payload.articles || [];
             console.log(`[DEBUG] Market ${market.id}: Full Payload Snapshot: ${JSON.stringify(payload).substring(0, 500)}...`);
-                  // ENHANCED DEBUG: Log full API response
-      console.log(`[DEBUG-API] Market ${market.id}: Full API Response: ${JSON.stringify(payload)}`);
-      if (payload.status === 'error') {
-        console.error(`[ERROR] Market ${market.id}: NewsAPI Error - Code: ${payload.code}, Message: ${payload.message}`);
-        continue;
-      }
+
+            // If no articles found, try single-keyword fallback
+            if (newsItems.length === 0 && keywords.includes(' ')) {
+                const singleKeyword = keywords.split(' ')[0];
+                console.log(`[INFO] Market ${market.id}: Retrying with single keyword: "${singleKeyword}"`);
+                const fallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(singleKeyword)}&apiKey=${env.THENEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+                const fallbackResponse = await fetch(fallbackUrl);
+                if (fallbackResponse.ok) {
+                    const fallbackPayload = await fallbackResponse.json();
+                    newsItems = fallbackPayload.articles || [];
+                    console.log(`[INFO] Market ${market.id}: Fallback received ${newsItems.length} articles.`);
+                }
+            }
+
+            // ENHANCED DEBUG: Log full API response
+            console.log(`[DEBUG-API] Market ${market.id}: Full API Response: ${JSON.stringify(payload)}`);
+            if (payload.status === 'error') {
+                console.error(`[ERROR] Market ${market.id}: NewsAPI Error - Code: ${payload.code}, Message: ${payload.message}`);
+                continue;
+            }
 
             if (newsItems.length === 0) {
                 console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}". API Success: ${payload.status}`);
