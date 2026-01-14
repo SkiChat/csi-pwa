@@ -21,13 +21,14 @@ interface NewsArticle {
  * Removes common filler words and extracts nouns/entities
  */
 function extractKeywords(title: string): string {
-    const stopWords = new Set(['will', 'the', 'and', 'for', 'with', 'from', 'this', 'that', 'than', 'into', 'more', 'less', 'reach', 'get', 'have', 'been', 'what', 'when', 'where']);
+    const stopWords = new Set(['will', 'the', 'and', 'for', 'with', 'from', 'this', 'that', 'than', 'into', 'more', 'less', 'reach', 'get', 'have', 'been', 'what', 'when', 'where', 'which', 'would', 'could', 'should']);
     return title
         .toLowerCase()
+        .replace(/\b(20\d{2}|19\d{2})\b/g, '') // Remove years like 2024, 2025
         .replace(/[?.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
         .split(' ')
         .filter(word => word.length > 3 && !stopWords.has(word))
-        .slice(0, 2)
+        .slice(0, 3)
         .join(' ');
 }
 
@@ -74,8 +75,12 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             const keywords = extractKeywords(market.title);
             console.log(`[INFO] Market ${market.id} (${market.title}): Extracted keywords: "${keywords}"`);
 
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+
             console.log(`[INFO] Market ${market.id}: Calling NewsAPI.org with keywords: "${keywords}"`);
-            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&from=${fromDate}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=relevancy&pageSize=10`;
             const response = await fetch(apiUrl);
 
             // Handle API errors
@@ -93,13 +98,27 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             // If no articles found, try single-keyword fallback
             if (newsItems.length === 0 && keywords.includes(' ')) {
                 const singleKeyword = keywords.split(' ')[0];
-                console.log(`[INFO] Market ${market.id}: Retrying with single keyword: "${singleKeyword}"`);
-                const fallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(singleKeyword)}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+                console.log(`[INFO] Market ${market.id}: First fallback with single keyword: "${singleKeyword}"`);
+                const fallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(singleKeyword)}&from=${fromDate}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=relevancy&pageSize=10`;
                 const fallbackResponse = await fetch(fallbackUrl);
                 if (fallbackResponse.ok) {
                     const fallbackPayload = await fallbackResponse.json();
                     newsItems = fallbackPayload.articles || [];
-                    console.log(`[INFO] Market ${market.id}: Fallback received ${newsItems.length} articles.`);
+                    console.log(`[INFO] Market ${market.id}: First fallback received ${newsItems.length} articles.`);
+                }
+            }
+
+            // If still no articles, try a second fallback (broadest search)
+            if (newsItems.length === 0 && keywords.length > 0) {
+                const words = keywords.split(' ');
+                const primaryKeyword = words[0];
+                console.log(`[INFO] Market ${market.id}: Second fallback with primary keyword only: "${primaryKeyword}"`);
+                const secondFallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(primaryKeyword)}&from=${fromDate}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=relevancy&pageSize=10`;
+                const secondFallbackResponse = await fetch(secondFallbackUrl);
+                if (secondFallbackResponse.ok) {
+                    const secondFallbackPayload = await secondFallbackResponse.json();
+                    newsItems = secondFallbackPayload.articles || [];
+                    console.log(`[INFO] Market ${market.id}: Second fallback received ${newsItems.length} articles.`);
                 }
             }
 
