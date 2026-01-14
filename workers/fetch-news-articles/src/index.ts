@@ -75,7 +75,7 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             console.log(`[INFO] Market ${market.id} (${market.title}): Extracted keywords: "${keywords}"`);
 
             console.log(`[INFO] Market ${market.id}: Calling NewsAPI.org with keywords: "${keywords}"`);
-            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.THENEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
             const response = await fetch(apiUrl);
 
             // Handle API errors
@@ -94,7 +94,7 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             if (newsItems.length === 0 && keywords.includes(' ')) {
                 const singleKeyword = keywords.split(' ')[0];
                 console.log(`[INFO] Market ${market.id}: Retrying with single keyword: "${singleKeyword}"`);
-                const fallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(singleKeyword)}&apiKey=${env.THENEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+                const fallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(singleKeyword)}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
                 const fallbackResponse = await fetch(fallbackUrl);
                 if (fallbackResponse.ok) {
                     const fallbackPayload = await fallbackResponse.json();
