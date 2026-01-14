@@ -21,13 +21,13 @@ interface NewsArticle {
  * Removes common filler words and extracts nouns/entities
  */
 function extractKeywords(title: string): string {
-    const stopWords = new Set(['will', 'the', 'and', 'for', 'with', 'from', 'this', 'that', 'than', 'into']);
+    const stopWords = new Set(['will', 'the', 'and', 'for', 'with', 'from', 'this', 'that', 'than', 'into', 'more', 'less', 'reach', 'get', 'have', 'been', 'what', 'when', 'where']);
     return title
         .toLowerCase()
         .replace(/[?.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
         .split(' ')
         .filter(word => word.length > 3 && !stopWords.has(word))
-        .slice(0, 3)
+        .slice(0, 2)
         .join(' ');
 }
 
