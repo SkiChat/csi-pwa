@@ -6,7 +6,7 @@ interface Market {
     title: string;
 }
 
-interface NewsArticle { 
+interface NewsArticle {
     uuid: string;
     title: string;
     description: string;
@@ -75,7 +75,7 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             console.log(`[INFO] Market ${market.id} (${market.title}): Extracted keywords: "${keywords}"`);
 
             console.log(`[INFO] Market ${market.id}: Calling NewsAPI.org with keywords: "${keywords}"`);
-            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
+            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&apiKey=${env.THENEWSAPI_KEY}&language=en&sortBy=publishedAt&pageSize=5`;
             const response = await fetch(apiUrl);
 
             // Handle API errors
