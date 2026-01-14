@@ -89,6 +89,12 @@ async function fetchAndStoreNews(supabase: any, env: any) {
 
             const newsItems = payload.articles || [];
             console.log(`[DEBUG] Market ${market.id}: Full Payload Snapshot: ${JSON.stringify(payload).substring(0, 500)}...`);
+                  // ENHANCED DEBUG: Log full API response
+      console.log(`[DEBUG-API] Market ${market.id}: Full API Response: ${JSON.stringify(payload)}`);
+      if (payload.status === 'error') {
+        console.error(`[ERROR] Market ${market.id}: NewsAPI Error - Code: ${payload.code}, Message: ${payload.message}`);
+        continue;
+      }
 
             if (newsItems.length === 0) {
                 console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}". API Success: ${payload.status}`);
