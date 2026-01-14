@@ -75,26 +75,18 @@ async function fetchAndStoreNews(supabase: any, env: any) {
       const keywords = extractKeywords(market.title);
       console.log(`[INFO] Market ${market.id} (${market.title}): Extracted keywords: "${keywords}"`);
 
-      const apiUrl = `https://api.thenewsapi.com/v1/news/all?api_token=${env.THENEWSAPI_KEY}&search=${encodeURIComponent(keywords)}` +
-        `&language=en&limit=5`;
       
       console.log(`[INFO] Market ${market.id}: Calling TheNewsAPI with keywords: "${keywords}"`);
-
-      const response = await fetch(apiUrl);
-
-      if (!response.ok) {
         console.error(`[ERROR] Market ${market.id}: API returned status ${response.status}: ${response.statusText}`);
         continue;
       }
 
       const payload: any = await response.json();
-      console.log(`[INFO] Market ${market.id}: TheNewsAPI Response:`, JSON.stringify(payload).substring(0, 200));
-
+      console.log(`[INFO] Market ${market.id}: NewsAPI.org Response:`, JSON.stringify(payload).substring(0, 200));
       const newsItems: NewsArticle[] = payload.data || [];
-      console.log(`[INFO] Market ${market.id}: Received ${newsItems.length} articles from TheNewsAPI.`);
-
+      console.log(`[INFO] Market ${market.id}: Received ${newsItems.length} articles from NewsAPI.org.`);
       if (newsItems.length === 0) {
-        console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}"`);
+        console.log(`[WARN] Market ${market.articles}: No articles returned for keywords "${keywords}"`);
         continue;
       }
 
@@ -103,14 +95,11 @@ async function fetchAndStoreNews(supabase: any, env: any) {
 
         // a. Save to articles table (upsert by external_id)
         const articleData = {
-          external_id: item.uuid || item.url,
-          title: item.title,
+        external_id: item.url, // NewsAPI.org doesn't have uuid, using url as unique identifier          title: item.title,
           url: item.url,
-          source: item.source || "News API",
-          published_at: item.published_at,
-          description: item.description,
-          metadata: { snippet: item.snippet }
-        };
+        published_at: item.publishedAt,          description: item.description,
+                  source: item.source?.name || "NewsAPI",
+        metadata: { content: item.content } // NewsAPI.org uses 'content' field        };
 
         console.log(`[DEBUG] Market ${market.id}: Upserting article with external_id: ${articleData.external_id}`);
 
