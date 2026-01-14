@@ -72,15 +72,13 @@ async function fetchAndStoreNews(supabase: any, env: any) {
 
     for (const market of markets) {
         try {
+            // Extract keywords for search
             const keywords = extractKeywords(market.title);
             console.log(`[INFO] Market ${market.id} (${market.title}): Extracted keywords: "${keywords}"`);
 
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            const fromDate = sevenDaysAgo.toISOString().split('T')[0];
-
-            console.log(`[INFO] Market ${market.id}: Calling NewsAPI.org with keywords: "${keywords}"`);
-            const apiUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(keywords)}&from=${fromDate}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=relevancy&pageSize=10`;
+            // Call TheNewsAPI with keywords
+            console.log(`[INFO] Market ${market.id}: Calling TheNewsAPI with keywords: "${keywords}"`);
+            const apiUrl = `https://api.thenewsapi.com/v1/news/all?api_token=${env.THENEWSAPI_KEY}&search=${encodeURIComponent(keywords)}&language=en&limit=10`;
             const response = await fetch(apiUrl);
 
             // Handle API errors
@@ -90,47 +88,26 @@ async function fetchAndStoreNews(supabase: any, env: any) {
             }
 
             const payload: any = await response.json();
-            console.log(`[INFO] Market ${market.id}: NewsAPI.org totalResults: ${payload.totalResults}`);
+            console.log(`[INFO] Market ${market.id}: TheNewsAPI meta: ${JSON.stringify(payload.meta)}`);
+            let newsItems = payload.data || [];
+            console.log(`[DEBUG] Market ${market.id}: Received ${newsItems.length} articles`);
 
-            let newsItems = payload.articles || [];
-            console.log(`[DEBUG] Market ${market.id}: Full Payload Snapshot: ${JSON.stringify(payload).substring(0, 500)}...`);
-
-            // If no articles found, try single-keyword fallback
+            // If no articles found with full keywords, try with single primary keyword
             if (newsItems.length === 0 && keywords.includes(' ')) {
-                const singleKeyword = keywords.split(' ')[0];
-                console.log(`[INFO] Market ${market.id}: First fallback with single keyword: "${singleKeyword}"`);
-                const fallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(singleKeyword)}&from=${fromDate}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=relevancy&pageSize=10`;
+                const primaryKeyword = keywords.split(' ')[0];
+                console.log(`[INFO] Market ${market.id}: Retrying with primary keyword: "${primaryKeyword}"`);
+                const fallbackUrl = `https://api.thenewsapi.com/v1/news/all?api_token=${env.THENEWSAPI_KEY}&search=${encodeURIComponent(primaryKeyword)}&language=en&limit=10`;
                 const fallbackResponse = await fetch(fallbackUrl);
+
                 if (fallbackResponse.ok) {
                     const fallbackPayload = await fallbackResponse.json();
-                    newsItems = fallbackPayload.articles || [];
-                    console.log(`[INFO] Market ${market.id}: First fallback received ${newsItems.length} articles.`);
+                    newsItems = fallbackPayload.data || [];
+                    console.log(`[INFO] Market ${market.id}: Fallback received ${newsItems.length} articles`);
                 }
-            }
-
-            // If still no articles, try a second fallback (broadest search)
-            if (newsItems.length === 0 && keywords.length > 0) {
-                const words = keywords.split(' ');
-                const primaryKeyword = words[0];
-                console.log(`[INFO] Market ${market.id}: Second fallback with primary keyword only: "${primaryKeyword}"`);
-                const secondFallbackUrl = `https://newsapi.org/v2/everything?q=${encodeURIComponent(primaryKeyword)}&from=${fromDate}&apiKey=${env.NEWSAPI_KEY}&language=en&sortBy=relevancy&pageSize=10`;
-                const secondFallbackResponse = await fetch(secondFallbackUrl);
-                if (secondFallbackResponse.ok) {
-                    const secondFallbackPayload = await secondFallbackResponse.json();
-                    newsItems = secondFallbackPayload.articles || [];
-                    console.log(`[INFO] Market ${market.id}: Second fallback received ${newsItems.length} articles.`);
-                }
-            }
-
-            // ENHANCED DEBUG: Log full API response
-            console.log(`[DEBUG-API] Market ${market.id}: Full API Response: ${JSON.stringify(payload)}`);
-            if (payload.status === 'error') {
-                console.error(`[ERROR] Market ${market.id}: NewsAPI Error - Code: ${payload.code}, Message: ${payload.message}`);
-                continue;
             }
 
             if (newsItems.length === 0) {
-                console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}". API Success: ${payload.status}`);
+                console.log(`[WARN] Market ${market.id}: No articles returned for keywords "${keywords}"`);
                 continue;
             }
 
@@ -139,13 +116,17 @@ async function fetchAndStoreNews(supabase: any, env: any) {
 
                 // a. Save to articles table (upsert by external_id)
                 const articleToUpsert = {
-                    external_id: item.url, // Use URL as stable ID for NewsAPI
+                    external_id: item.uuid || item.url, // TheNewsAPI provides uuid
                     title: item.title,
                     url: item.url,
-                    source: item.source?.name || "News API",
-                    published_at: item.publishedAt,
+                    source: item.source || "TheNewsAPI",
+                    published_at: item.published_at,
                     description: item.description,
-                    metadata: { content: item.content }
+                    metadata: {
+                        snippet: item.snippet,
+                        image_url: item.image_url,
+                        categories: item.categories
+                    }
                 };
 
                 console.log(`[DEBUG] Market ${market.id}: Transformation result for article: ${item.title.substring(0, 50)}... Target URL: ${item.url}`);
