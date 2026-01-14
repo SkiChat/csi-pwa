@@ -6,7 +6,7 @@ interface Market {
     title: string;
 }
 
-interface NewsArticle {
+interface NewsArticle { 
     uuid: string;
     title: string;
     description: string;
