@@ -1,0 +1,30 @@
+name: Deploy Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'workers/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Workers
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy fetch-news-articles worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: workers/fetch-news-articles
+          command: deploy
+      
+      - name: Deploy generate-ai-summaries worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: workers/generate-ai-summaries
+          command: deploy
