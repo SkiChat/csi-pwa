@@ -124,11 +124,11 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Volume Statistics</p>
                                 <div className="grid grid-cols-2 gap-8">
                                     <div>
-                                        <p className="text-2xl font-black text-slate-900">$1.2M</p>
+                                        <p className="text-2xl font-black text-slate-900">—</p>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase">24h Volume</p>
                                     </div>
                                     <div>
-                                        <p className="text-2xl font-black text-slate-900">$450K</p>
+                                        <p className="text-2xl font-black text-slate-900">—</p>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase">Liquidity</p>
                                     </div>
                                 </div>
