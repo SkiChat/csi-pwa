@@ -50,12 +50,13 @@ function calculateRelevance(title: string, content: string, keywords: string): n
 async function fetchAndStoreNews(supabase: any, env: any) {
     console.log("[INFO] Starting fetch-news-articles worker...");
 
-    // 1. Fetch active markets
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const { data: markets, error: marketError } = await supabase
         .from('markets')
-        .select('id, title')
+        .select('id, title, category')
         .eq('status', 'active')
-        .limit(10); // Process in small batches for stability
+        .or(`is_featured.eq.true,updated_at.gte.${sevenDaysAgo}`)
+        .limit(15);
 
     if (marketError) {
         console.error("[ERROR] Failed to fetch markets:", marketError);
