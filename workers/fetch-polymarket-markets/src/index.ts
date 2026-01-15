@@ -14,7 +14,16 @@ interface GammaMarket {
     groupItemTitle?: string;
 }
 
-async function fetchPolymarketData(supabase: any) {
+async function fetchPolymarketData(supabase: any) 
+
+  // Featured market IDs to highlight
+  const FEATURED_MARKET_IDS = [
+          '0x7695a430e8c142b2209c5b63b9c8dca6ded6fb69',
+          '0xdd22472d908412f1d94c01730a3231bf43fd2b40',
+          '0x0180b84c95d234a2b4c0b49fafc5a2005f27b0a6',
+          '0xa88e0d50983ba60b8f59919ce61f6c6bd23e1f8d',
+          '0xb663f5e790064fea31ca5259b2c45ffd8bb6e18d'
+        ];{
     console.log("Fetching markets from Polymarket Gamma API...");
 
     const response = await fetch("https://gamma-api.polymarket.com/markets?closed=false&active=true&order=-volume24hr&limit=100", {
@@ -37,6 +46,7 @@ async function fetchPolymarketData(supabase: any) {
         category: market.category || "General",
         status: market.closed ? "closed" : (market.active ? "active" : "inactive"),
         slug: market.slug || market.id,
+            is_featured: FEATURED_MARKET_IDS.includes(market.id),
         metadata: {
             description: market.description,
             icon: market.icon,
