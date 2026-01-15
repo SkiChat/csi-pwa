@@ -14,6 +14,22 @@ interface Market {
     category: string;
     resolution_time: string;
     status: string;
+    metadata?: {
+        description?: string;
+        icon?: string;
+        image?: string;
+        groupItemTitle?: string;
+        volume?: number | string;
+        liquidity?: number | string;
+        volumeChange24hr?: number | string;
+    };
+}
+
+interface AISummary {
+    summary_text: string;
+    sentiment_score: number;
+    impact_score: number;
+    summary_type: string;
 }
 
 interface MarketDetailProps {
@@ -23,7 +39,9 @@ interface MarketDetailProps {
 export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
     const navigate = useNavigate();
     const [market, setMarket] = useState<Market | null>(null);
+    const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
     const [loading, setLoading] = useState(true);
+    const [summaryLoading, setSummaryLoading] = useState(true);
 
     useEffect(() => {
         if (!marketId) return;
@@ -41,8 +59,39 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
             }
             setLoading(false);
         }
+
+        async function fetchAiSummary() {
+            setSummaryLoading(true);
+            const { data, error } = await supabase
+                .from('ai_summaries')
+                .select('*')
+                .eq('market_id', marketId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (!error && data) {
+                setAiSummary(data);
+            }
+            setSummaryLoading(false);
+        }
+
         fetchMarket();
+        fetchAiSummary();
     }, [marketId]);
+
+    const formatCurrency = (value: number | string | undefined) => {
+        if (value === undefined || value === null) return '--';
+        const num = typeof value === 'string' ? parseFloat(value) : value;
+        if (isNaN(num)) return '--';
+
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            notation: 'compact',
+            maximumFractionDigits: 1
+        }).format(num);
+    };
 
     if (loading) return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -109,9 +158,18 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
                             <div className="bg-gradient-to-br from-indigo-600 to-violet-700 p-8 rounded-3xl text-white shadow-xl shadow-indigo-200 overflow-hidden relative group">
                                 <div className="relative z-10">
                                     <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest mb-2">Alpha Signal</p>
-                                    <h4 className="text-2xl font-bold mb-4">Sentiment Shift Detected</h4>
+                                    <h4 className="text-2xl font-bold mb-4">
+                                        {summaryLoading ? 'Analyzing...' : aiSummary ? 'Sentiment Analysis' : 'Pending Analysis'}
+                                    </h4>
                                     <p className="text-sm text-indigo-50 leading-relaxed mb-6 opacity-90">
-                                        Our LLM analysis of latest news suggests a 15% increase in positive sentiment over the last 6 hours.
+                                        {summaryLoading ? 'Generating intelligence report...' :
+                                            aiSummary ? aiSummary.summary_text :
+                                                'No AI analysis available yet for this market. Our models are currently indexing latest events.'}
+                                        {aiSummary && (
+                                            <span className="block mt-2 font-bold text-xs uppercase tracking-wider text-indigo-200">
+                                                Sentiment: {aiSummary.sentiment_score > 0 ? '+' : ''}{(aiSummary.sentiment_score * 100).toFixed(0)}%
+                                            </span>
+                                        )}
                                     </p>
                                     <button className="px-6 py-2.5 bg-white text-indigo-600 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors shadow-sm">
                                         View Deep Analysis
@@ -124,11 +182,15 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Volume Statistics</p>
                                 <div className="grid grid-cols-2 gap-8">
                                     <div>
-                                        <p className="text-2xl font-black text-slate-900">—</p>
+                                        <p className="text-2xl font-black text-slate-900">
+                                            {formatCurrency(market?.metadata?.volume)}
+                                        </p>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase">24h Volume</p>
                                     </div>
                                     <div>
-                                        <p className="text-2xl font-black text-slate-900">—</p>
+                                        <p className="text-2xl font-black text-slate-900">
+                                            {formatCurrency(market?.metadata?.liquidity)}
+                                        </p>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase">Liquidity</p>
                                     </div>
                                 </div>

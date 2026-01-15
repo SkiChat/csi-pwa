@@ -7,15 +7,30 @@ import MarketList from './components/MarketList'
 
 function App() {
     const [markets, setMarkets] = useState<any[]>([])
+    const [featuredMarkets, setFeaturedMarkets] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
     useEffect(() => {
+        async function fetchFeatured() {
+            const { data, error } = await supabase
+                .from('markets')
+                .select('*')
+                .eq('status', 'active')
+                .eq('is_featured', true)
+                .limit(3);
+
+            if (!error && data) {
+                setFeaturedMarkets(data);
+            }
+        }
+
         async function fetchMarkets() {
             const { data, error } = await supabase
                 .from('markets')
                 .select('*')
                 .eq('status', 'active')
+                .filter('is_featured', 'eq', false) // Safe if column exists, using filter for flexibility
                 .limit(20);
 
             if (!error && data) {
@@ -24,6 +39,7 @@ function App() {
             setLoading(false);
         }
 
+        fetchFeatured();
         fetchMarkets();
     }, []);
 
@@ -51,6 +67,46 @@ function App() {
                                 <h1 className="text-4xl font-black text-slate-900 leading-none">Polymarket Intelligence</h1>
                                 <p className="text-slate-500 font-medium mt-1">Deep Signal Analysis for Prediction Markets</p>
                             </div>
+                        </div>
+
+                        {featuredMarkets.length > 0 && (
+                            <section className="mb-16">
+                                <div className="flex items-center gap-2 mb-6">
+                                    <div className="h-1 w-8 bg-indigo-600 rounded-full"></div>
+                                    <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Featured Signals</h2>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {featuredMarkets.map((m) => (
+                                        <div
+                                            key={m.id}
+                                            onClick={() => navigate(`/market/${m.id}`)}
+                                            className="group cursor-pointer bg-white p-8 rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200 transition-all duration-500 relative overflow-hidden"
+                                        >
+                                            <div className="absolute top-0 right-0 p-4">
+                                                <span className="flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-[9px] font-black text-white rounded-full tracking-widest uppercase shadow-lg shadow-indigo-200">
+                                                    <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                    Featured
+                                                </span>
+                                            </div>
+                                            <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-4">{m.category}</p>
+                                            <h3 className="text-xl font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors mb-4 line-clamp-2">
+                                                {m.title}
+                                            </h3>
+                                            <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-100">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Analysis Available</p>
+                                                <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        <div className="flex items-center gap-2 mb-8 mt-12">
+                            <div className="h-1 w-8 bg-slate-200 rounded-full"></div>
+                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Active Markets</h2>
                         </div>
 
                         <MarketList

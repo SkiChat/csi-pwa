@@ -12,6 +12,9 @@ interface GammaMarket {
     icon?: string;
     image?: string;
     groupItemTitle?: string;
+    volume?: string | number;
+    liquidity?: string | number;
+    volume24hr?: string | number;
 }
 
 async function fetchPolymarketData(supabase: any) 
@@ -51,7 +54,10 @@ async function fetchPolymarketData(supabase: any)
             description: market.description,
             icon: market.icon,
             image: market.image,
-            groupItemTitle: market.groupItemTitle
+            groupItemTitle: market.groupItemTitle,
+            volume: market.volume,
+            liquidity: market.liquidity,
+            volumeChange24hr: market.volume24hr // Using volume24hr as requested volumeChange24hr
         }
     }));
 
