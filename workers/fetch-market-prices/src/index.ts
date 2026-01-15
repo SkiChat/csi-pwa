@@ -23,7 +23,7 @@ async function fetchAndStorePrices(supabase: any, env: any) {
         return { message: "No active markets found." };
     }
 
-    const marketIds = markets.map(m => m.id);
+    const marketIds: string[] = markets.map((m: any) => m.id);
     console.log(`[INFO] Updating prices for ${marketIds.length} markets.`);
 
     // 2. Process in batches of 50 (Polymarket Gamma API limit/safety)
@@ -32,10 +32,10 @@ async function fetchAndStorePrices(supabase: any, env: any) {
 
     for (let i = 0; i < marketIds.length; i += batchSize) {
         const batch = marketIds.slice(i, i + batchSize);
-        const idsParam = batch.join(',');
+        const queryParams = batch.map((id: string) => `id=${id}`).join('&');
 
         try {
-            const response = await fetch(`https://gamma-api.polymarket.com/markets?id=${idsParam}`);
+            const response = await fetch(`https://gamma-api.polymarket.com/markets?${queryParams}`);
             if (!response.ok) {
                 console.error(`[ERROR] Gamma API failed for batch starting at index ${i}: ${response.statusText}`);
                 continue;
