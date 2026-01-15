@@ -25,16 +25,23 @@ async function generateDeepAnalysis(supabase: any, env: any) {
 
     if (marketError) throw marketError;
     if (!markets || markets.length === 0) return { message: "No active markets found." };
+      console.log(`✓ Found ${markets.length} active markets`);
 
     let analysesCreated = 0;
 
     for (const market of markets) {
+            console.log(`\n→ Processing market: ${market.title} (${market.id})`);
         // 2. Gather Context: News
         const { data: newsItems, error: newsError } = await supabase
             .from('market_articles')
             .select('articles(title, description, source)')
             .eq('market_id', market.id)
             .limit(3);
+        
+    console.log(`  Found ${newsItems?.length || 0} articles for market ${market.id}`);
+    if (newsError) {
+      console.error(`  Error fetching articles:`, newsError);
+    }
 
         const articles = (newsItems || []).map((ni: any) => ({
             title: ni.articles.title,
@@ -52,6 +59,7 @@ ${articles.map(a => `- ${a.title}`).join('\n')}
 
 Provide analysis:`;
 
+              console.log(`  Calling OpenRouter API for market ${market.id}...`);
         try {
             await delay(1200); // Respect rate limits
 
@@ -74,6 +82,7 @@ Provide analysis:`;
                     response_format: { type: "json_object" }
                 })
             });
+                  console.log(`  API Response status: ${response.status} ${response.ok ? '✓' : '✗'}`);
 
             if (!response.ok) {
                 console.error(`OpenRouter error for ${market.id}: ${response.statusText}`);
@@ -119,6 +128,12 @@ Provide analysis:`;
                         timestamp: new Date().toISOString()
                     }
                 }, { onConflict: 'market_id, summary_date' });
+            
+      if (insertError) {
+        console.error(`  ✗ Failed to insert summary for market ${market.id}:`, insertError);
+      } else {
+        console.log(`  ✓ Successfully inserted summary for market ${market.id}`);
+      }
 
             if (!insertError) analysesCreated++;
 
@@ -126,6 +141,8 @@ Provide analysis:`;
             console.error(`Failed analyst loop for ${market.id}:`, err);
         }
     }
+    
+  console.log(`\n✓ Completed processing ${markets.length} markets. Summaries created: ${analysesCreated}`);
 
     return {
         success: true,
