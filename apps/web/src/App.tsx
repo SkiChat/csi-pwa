@@ -30,7 +30,7 @@ function App() {
                 .from('markets')
                 .select('*')
                 .eq('status', 'active')
-                .filter('is_featured', 'eq', false) // Safe if column exists, using filter for flexibility
+                .or('is_featured.is.null,is_featured.eq.false')
                 .limit(20);
 
             if (!error && data) {
