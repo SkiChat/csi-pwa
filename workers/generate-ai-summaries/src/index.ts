@@ -16,7 +16,8 @@ async function delay(ms: number) {
 async function generateDeepAnalysis(supabase: any, env: any) {
     console.log("Commencing Advanced Market Analysis with DeepSeek V3...");
 
-  // 1. Fetch 10 active markets that have articles    const { data: markets, error: marketError } = await supabase
+  // 1. Fetch 10 active markets that have article
+      const { data: markets, error: marketError } = await supabase
         .from('markets')
         .select(`
       id, 
