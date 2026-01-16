@@ -26,10 +26,10 @@ interface Market {
 }
 
 interface AISummary {
-    summary_text: string;
-    sentiment_score: number;
-    impact_score: number;
-    summary_type: string;
+    summary: string;
+    confidence_score: number;
+    sentiment: string;
+    created_at: string;
 }
 
 interface MarketDetailProps {
@@ -163,12 +163,17 @@ export const MarketDetail: React.FC<MarketDetailProps> = ({ marketId }) => {
                                     </h4>
                                     <p className="text-sm text-indigo-50 leading-relaxed mb-6 opacity-90">
                                         {summaryLoading ? 'Generating intelligence report...' :
-                                            aiSummary ? aiSummary.summary_text :
+                                            aiSummary ? aiSummary.summary : // Use summary field
                                                 'No AI analysis available yet for this market. Our models are currently indexing latest events.'}
                                         {aiSummary && (
-                                            <span className="block mt-2 font-bold text-xs uppercase tracking-wider text-indigo-200">
-                                                Sentiment: {aiSummary.sentiment_score > 0 ? '+' : ''}{(aiSummary.sentiment_score * 100).toFixed(0)}%
-                                            </span>
+                                            <div className="mt-4 space-y-1">
+                                                <span className="block font-bold text-xs uppercase tracking-wider text-indigo-200">
+                                                    Confidence: {(aiSummary.confidence_score * 100).toFixed(0)}%
+                                                </span>
+                                                <span className="block text-[10px] text-indigo-300/80 uppercase tracking-widest">
+                                                    Generated: {new Date(aiSummary.created_at).toLocaleString()}
+                                                </span>
+                                            </div>
                                         )}
                                     </p>
                                     <button className="px-6 py-2.5 bg-white text-indigo-600 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors shadow-sm">

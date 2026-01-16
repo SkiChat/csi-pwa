@@ -16,8 +16,8 @@ async function delay(ms: number) {
 async function generateDeepAnalysis(supabase: any, env: any) {
     console.log("Commencing Advanced Market Analysis with DeepSeek V3...");
 
-  // 1. Fetch 10 active markets that have article
-      const { data: markets, error: marketError } = await supabase
+    // 1. Fetch 10 active markets that have article
+    const { data: markets, error: marketError } = await supabase
         .from('markets')
         .select(`
       id, 
@@ -31,23 +31,23 @@ async function generateDeepAnalysis(supabase: any, env: any) {
 
     if (marketError) throw marketError;
     if (!markets || markets.length === 0) return { message: "No active markets found." };
-      console.log(`✓ Found ${markets.length} active markets`);
+    console.log(`✓ Found ${markets.length} active markets`);
 
     let analysesCreated = 0;
 
     for (const market of markets) {
-            console.log(`\n→ Processing market: ${market.title} (${market.id})`);
+        console.log(`\n→ Processing market: ${market.title} (${market.id})`);
         // 2. Gather Context: News
         const { data: newsItems, error: newsError } = await supabase
             .from('market_articles')
             .select('articles(title, description, source)')
             .eq('market_id', market.id)
             .limit(3);
-        
-    console.log(`  Found ${newsItems?.length || 0} articles for market ${market.id}`);
-    if (newsError) {
-      console.error(`  Error fetching articles:`, newsError);
-    }
+
+        console.log(`  Found ${newsItems?.length || 0} articles for market ${market.id}`);
+        if (newsError) {
+            console.error(`  Error fetching articles:`, newsError);
+        }
 
         const articles = (newsItems || []).map((ni: any) => ({
             title: ni.articles.title,
@@ -56,16 +56,25 @@ async function generateDeepAnalysis(supabase: any, env: any) {
         }));
 
         // 3. Construct Prompts
-        const systemPrompt = "You are a prediction market analyst. Analyze markets concisely. Format: 1) Sentiment (bullish/bearish/neutral), 2) Key factors (2-3 bullet points), 3) Risk level (low/medium/high). Keep under 150 words.";
+        const systemPrompt = `You are a prediction market analyst. Analyze the provided market context and news to generate a concise intelligence summary.
+        
+        You MUST return a JSON object with this exact structure:
+        {
+          "summary": "1-2 paragraph analysis of the market",
+          "confidence_score": 0.0 to 1.0 (float reflecting your certainty),
+          "sentiment": "bullish" | "bearish" | "neutral"
+        }
+        
+        Keep the summary under 150 words. Focus on the most impactful recent drivers.`;
 
         const userPrompt = `Market: ${market.title}
 Category: ${market.category || "General"}
 Recent Articles:
-${articles.map(a => `- ${a.title}`).join('\n')}
+${articles.map((a: any) => `- ${a.title}: ${a.description}`).join('\n')}
 
-Provide analysis:`;
+Generate Analysis:`;
 
-              console.log(`  Calling OpenRouter API for market ${market.id}...`);
+        console.log(`  Calling OpenRouter API for market ${market.id}...`);
         try {
             await delay(1200); // Respect rate limits
 
@@ -83,12 +92,10 @@ Provide analysis:`;
                         { role: "system", content: systemPrompt },
                         { role: "user", content: userPrompt }
                     ],
-                    // We expect a structured response, though free models may vary, 
-                    // we'll try to extract the components or use the whole text.
                     response_format: { type: "json_object" }
                 })
             });
-                  console.log(`  API Response status: ${response.status} ${response.ok ? '✓' : '✗'}`);
+            console.log(`  API Response status: ${response.status} ${response.ok ? '✓' : '✗'}`);
 
             if (!response.ok) {
                 console.error(`OpenRouter error for ${market.id}: ${response.statusText}`);
@@ -98,22 +105,12 @@ Provide analysis:`;
             const aiPayload: any = await response.json();
             const aiContent = aiPayload.choices[0].message.content;
 
-            let finalMarkdown = "";
-            let sentimentScore = 0;
-            let impactScore = 0.5;
-
+            let parsed: any = {};
             try {
-                // Attempt to parse as JSON if the model followed instructions
-                const parsed = JSON.parse(aiContent);
-                finalMarkdown = parsed.analysis_markdown || aiContent;
-                sentimentScore = parsed.sentiment_score || 0;
-                impactScore = parsed.impact_score || 0.5;
+                parsed = JSON.parse(aiContent);
             } catch (e) {
-                // Fallback: if not JSON, use the raw text as the summary
-                finalMarkdown = aiContent;
-                // Simple heuristic for sentiment if fallback
-                if (aiContent.toLowerCase().includes('bullish')) sentimentScore = 0.8;
-                if (aiContent.toLowerCase().includes('bearish')) sentimentScore = -0.8;
+                console.warn(`  ✗ Failed to parse JSON content for ${market.id}`);
+                continue;
             }
 
             // 4. Store in ai_summaries
@@ -122,10 +119,12 @@ Provide analysis:`;
                 .upsert({
                     market_id: market.id,
                     summary_date: new Date().toISOString().split('T')[0],
-                    summary_text: finalMarkdown,
+                    summary: parsed.summary,
+                    summary_text: parsed.summary, // Keep legacy field for compatibility
+                    confidence_score: parsed.confidence_score || 0.5,
+                    sentiment: parsed.sentiment || 'neutral',
                     summary_type: 'analysis',
-                    sentiment_score: sentimentScore,
-                    impact_score: impactScore,
+                    sentiment_score: parsed.sentiment === 'bullish' ? 0.8 : (parsed.sentiment === 'bearish' ? -0.8 : 0),
                     metadata: {
                         model: "deepseek/deepseek-v3:free",
                         cost: 0,
@@ -134,12 +133,12 @@ Provide analysis:`;
                         timestamp: new Date().toISOString()
                     }
                 }, { onConflict: 'market_id, summary_date' });
-            
-      if (insertError) {
-        console.error(`  ✗ Failed to insert summary for market ${market.id}:`, insertError);
-      } else {
-        console.log(`  ✓ Successfully inserted summary for market ${market.id}`);
-      }
+
+            if (insertError) {
+                console.error(`  ✗ Failed to insert summary for market ${market.id}:`, insertError);
+            } else {
+                console.log(`  ✓ Successfully inserted summary for market ${market.id}`);
+            }
 
             if (!insertError) analysesCreated++;
 
@@ -147,8 +146,8 @@ Provide analysis:`;
             console.error(`Failed analyst loop for ${market.id}:`, err);
         }
     }
-    
-  console.log(`\n✓ Completed processing ${markets.length} markets. Summaries created: ${analysesCreated}`);
+
+    console.log(`\n✓ Completed processing ${markets.length} markets. Summaries created: ${analysesCreated}`);
 
     return {
         success: true,

@@ -18,12 +18,14 @@ interface Market {
 
 interface MarketListProps {
     markets: Market[];
+    liveMarketIds?: Set<string | number>;
     selectedId: number | string | null;
     onSelectMarket: (id: any) => void;
 }
 
 const MarketList: React.FC<MarketListProps> = ({
     markets,
+    liveMarketIds,
     selectedId,
     onSelectMarket
 }: MarketListProps) => {
@@ -49,6 +51,11 @@ const MarketList: React.FC<MarketListProps> = ({
                                 )}>
                                     {market.category || 'General'}
                                 </span>
+                                {liveMarketIds?.has(market.id) && (
+                                    <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-[8px] font-bold text-emerald-600 rounded-lg border border-emerald-200/50 uppercase tracking-tighter shadow-sm animate-pulse">
+                                        🟢 Live
+                                    </span>
+                                )}
                                 {isSelected && (
                                     <span className="flex h-2 w-2 rounded-full bg-indigo-600 animate-pulse ml-auto" />
                                 )}

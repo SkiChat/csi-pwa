@@ -117,7 +117,7 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
                                 }}
                                 itemStyle={{ fontWeight: 'black', color: '#4f46e5' }}
                                 labelStyle={{ display: 'none' }}
-                                formatter={(value: number, name: any, props: any) => {
+                                formatter={(value: number) => {
                                     return [`$${value.toFixed(2)}`, 'Market Price'];
                                 }}
                             />
@@ -133,8 +133,21 @@ export const PriceChartPanel: React.FC<PriceChartPanelProps> = ({ marketId }) =>
                         </AreaChart>
                     </ResponsiveContainer>
                 ) : (
-                    <div className="h-full flex items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">No price data available</p>
+                    <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 text-center">
+                        <div className="text-3xl mb-3">📊</div>
+                        <h4 className="text-sm font-bold text-slate-900 mb-2">Price History Not Available</h4>
+                        <p className="text-[10px] text-slate-500 font-medium leading-relaxed max-w-[240px] mb-4">
+                            This market may be archived or temporarily unavailable from our data provider.
+                            Volume and liquidity data are still available.
+                        </p>
+                        <a
+                            href={`https://polymarket.com/market/${marketId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm"
+                        >
+                            View Live Prices on Polymarket →
+                        </a>
                     </div>
                 )}
             </div>

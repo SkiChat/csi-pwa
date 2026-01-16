@@ -43,6 +43,20 @@ async function fetchAndStorePrices(supabase: any, env: any) {
 
             const gammaMarkets: any[] = await response.json();
 
+            // Log which markets returned no data
+            const returnedIds = new Set(gammaMarkets.map(m => m.id));
+            const missingIds = batch.filter(id => !returnedIds.has(id));
+
+            if (missingIds.length > 0) {
+                console.warn(`[WARN] ${missingIds.length} markets returned no data from Gamma API: ${missingIds.slice(0, 5).join(', ')}${missingIds.length > 5 ? '...' : ''}`);
+            }
+
+            // Only process markets that returned data
+            if (gammaMarkets.length === 0) {
+                console.warn(`[WARN] Batch starting at index ${i} returned zero markets - likely archived or restricted`);
+                continue;
+            }
+
             const priceInserts = gammaMarkets.map(m => {
                 // outcomePrices is consistently ["YES_PRICE", "NO_PRICE"]
                 let yesPrice = 0;
